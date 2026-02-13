@@ -3,5 +3,6 @@
     "watch": [
         "src/",
         "client/"
-    ]
+    ],
+    "ext": "js,json,html,css"
 }

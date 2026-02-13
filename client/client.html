@@ -6,6 +6,107 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
 
   <script>
+    async function handleResponse(res) {
+      const content = document.querySelector("#content");
+
+      switch (res.status) {
+        case 200:
+          content.innerHTML = "<p><b>Success!</b></p>"
+          break;
+        case 201:
+          content.innerHTML = "<p><b>Created!</b></p>"
+          break;
+        case 204:
+          content.innerHTML = "<p><b>Updated! (no content)</b></p>";
+          break;
+        case 400:
+          content.innerHTML = "<p><b>Bad request!</b></p>";
+          break;
+        case 404:
+          content.innerHTML = "<p><b>Not found!</b></p>";
+          break;
+        default:
+          content.innerHTML = `<p><b>Error code ${res.status} not implemented by client!</b></p>`;
+          break;
+      }
+
+      const txt = await res.text();
+      console.log(`RESPONSE TEXT: ${txt}`);
+
+      if (txt) {
+        const data = JSON.parse(txt);
+
+        if (data.users) {
+          content.innerHTML += `<p>${JSON.stringify(data.users)}</p>`;
+        }
+
+        if (data.message) {
+          content.innerHTML += `<p>Message: ${data.message}</p>`;
+        }
+      }
+    }
+
+    async function fetchUsers(e) {
+      const url = document.querySelector("#urlField").value;
+      const method = document.querySelector("#methodSelect").value;
+
+      const res = await fetch(url, { method });
+
+      handleResponse(res);
+    }
+
+    async function addUser(e) {
+      // ~~~ assemble body ~~~
+
+      const bodyObj = {};
+
+      const name = document.querySelector("#nameField").value;
+      if (name) {
+        bodyObj.name = name;
+      }
+
+      const age = document.querySelector("#ageField").value;
+      if (age) {
+        bodyObj.age = Number(age);
+      }
+
+      const bodyStr = JSON.stringify(bodyObj);
+
+      // ~~~ send fetch ~~~
+
+      const url = e.target.getAttribute("action");
+      const method = e.target.getAttribute("method");
+
+      const res = await fetch(url, {
+        method,
+        body: bodyStr,
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": bodyStr.length,
+          "Accept": "application/json"
+        },
+      });
+
+      handleResponse(res);
+    }
+
+    function init() {
+      const nameForm = document.querySelector("#nameForm");
+      nameForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        addUser(e);
+        return false;
+      });
+
+      const userForm = document.querySelector("#userForm");
+      userForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        fetchUsers(e);
+        return false;
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
 
   </script>
 </head>
@@ -13,6 +114,7 @@
 <body>
   <section id="top">
     <h3>POST Status Code Tests</h3>
+
     <form id="nameForm" action="/addUser" method="post">
       <label for="name">Name: </label>
       <input id="nameField" type="text" name="name" />
@@ -20,6 +122,7 @@
       <input id="ageField" type="number" name="age" min="0" max="100" step="1" />
       <input type="submit" value="Add User" />
     </form>
+
     <form id="userForm" action="/getUsers" method="get">
       <select id='urlField'>
         <option value='/getUsers'>/getUsers</option>
@@ -31,9 +134,10 @@
       </select>
       <input type="submit" value="Get User" />
     </form>
+
   </section>
-  <section id="content">
-  </section>
+
+  <section id="content"></section>
 </body>
 
 </html>
